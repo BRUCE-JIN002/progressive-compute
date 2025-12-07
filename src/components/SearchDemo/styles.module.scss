@@ -1,0 +1,507 @@
+.wrapper {
+  display: flex;
+  gap: 20px;
+  height: 100vh;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.container {
+  width: 700px;
+  min-width: 700px;
+  max-width: 700px;
+  overflow-y: auto;
+  flex-shrink: 0;
+
+  h2 {
+    margin-bottom: 20px;
+    color: #fff;
+  }
+
+  h3 {
+    margin: 20px 0 15px;
+    color: #555;
+    font-size: 18px;
+  }
+}
+
+.animationPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 50px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  overflow: hidden;
+  position: relative;
+  border-radius: 24px;
+  margin: 70px 0 34px 0;
+  width: 400px;
+
+  h3 {
+    color: white;
+    font-size: 24px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    margin-bottom: 30px;
+  }
+}
+
+.animationContainer {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.rotatingBox {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(45deg, #ff6b6b, #feca57);
+  animation: rotate 3s linear infinite;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes rotate {
+  from {
+    left: 50%;
+    top: 50%;
+    margin-left: -50px;
+    margin-top: -50px;
+  }
+  50% {
+    left: 55%;
+    top: 45%;
+    margin-left: -60px;
+    margin-top: -60px;
+  }
+  to {
+    left: 50%;
+    top: 50%;
+    margin-left: -50px;
+    margin-top: -50px;
+  }
+}
+
+.bouncingBall {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  background: radial-gradient(circle at 30% 30%, #fff, #4ecdc4);
+  border-radius: 50%;
+  animation: bounce 2s ease-in-out infinite;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    top: 0;
+  }
+  50% {
+    top: calc(100% - 50px);
+  }
+}
+
+.waveContainer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+}
+
+.wave {
+  width: 8%;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 10px 10px 0 0;
+  animation: wave 1.5s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    height: 20px;
+  }
+  50% {
+    height: 80px;
+  }
+}
+
+.pulseRing {
+  position: absolute;
+  top: 20%;
+  right: 15%;
+  border: 5px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  animation: pulse 2s ease-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    width: 75px;
+    height: 75px;
+    opacity: 1;
+  }
+  100% {
+    width: 300px;
+    height: 300px;
+    opacity: 0;
+  }
+}
+
+.searchConfig {
+  margin-bottom: 20px;
+  padding: 20px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.searchBox {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+
+  button {
+    padding: 10px 20px;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    white-space: nowrap;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  }
+
+  .progressiveBtn {
+    background: #4caf50;
+
+    &:hover:not(:disabled) {
+      background: #45a049;
+    }
+  }
+
+  .normalBtn {
+    background: #2196f3;
+
+    &:hover:not(:disabled) {
+      background: #1976d2;
+    }
+  }
+
+  .clearBtn {
+    background: #f44336;
+
+    &:hover:not(:disabled) {
+      background: #da190b;
+    }
+  }
+}
+
+.searchInput {
+  flex: 1;
+  padding: 10px 15px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: #4caf50;
+  }
+
+  &::placeholder {
+    color: #999;
+  }
+}
+
+.configRow {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.configItem {
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 14px;
+    color: #666;
+
+    input {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      width: 150px;
+
+      &:focus {
+        outline: none;
+        border-color: #4caf50;
+      }
+    }
+  }
+}
+
+.statsSection {
+  margin-bottom: 20px;
+
+  h3 {
+    margin: 10px 0 5px;
+    color: #fff;
+    font-size: 16px;
+  }
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.2s;
+  min-height: 45px;
+
+  &:hover {
+    border-color: #4caf50;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.statLabel {
+  font-size: 11px;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statValue {
+  font-size: 16px;
+  color: #333;
+  font-weight: bold;
+
+  &.highlight {
+    color: #4caf50;
+    font-size: 18px;
+  }
+}
+
+.progressBar {
+  width: 100%;
+  height: 30px;
+  background: #e0e0e0;
+  border-radius: 15px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #8bc34a);
+  transition: width 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  border-radius: 15px;
+}
+
+.error {
+  padding: 15px;
+  background: #ffebee;
+  border: 1px solid #ef5350;
+  border-radius: 8px;
+  color: #c62828;
+  margin-bottom: 20px;
+
+  strong {
+    display: block;
+    margin-bottom: 5px;
+  }
+}
+
+.hint {
+  padding: 20px;
+  background: #e3f2fd;
+  border: 1px solid #2196f3;
+  border-radius: 8px;
+  margin-bottom: 20px;
+
+  p {
+    margin: 0 0 15px;
+    font-weight: bold;
+    color: #1976d2;
+    font-size: 16px;
+  }
+
+  .hintTip {
+    margin: 15px 0 0;
+    font-size: 14px;
+    color: #1976d2;
+  }
+}
+
+.hintSection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
+}
+
+.hintLabel {
+  font-size: 14px;
+  color: #1976d2;
+  font-weight: 600;
+  min-width: 90px;
+}
+
+.exampleButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.exampleBtn {
+  padding: 4px 12px;
+  background: white;
+  color: #1976d2;
+  border: 1px solid #2196f3;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #2196f3;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.results {
+  margin-bottom: 20px;
+}
+
+.resultList {
+  display: grid;
+  gap: 15px;
+}
+
+.resultItem {
+  padding: 15px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: #4caf50;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.resultHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.resultId {
+  display: inline-block;
+  padding: 4px 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #666;
+  font-weight: bold;
+}
+
+.resultName {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.resultDescription {
+  margin-bottom: 8px;
+  color: #555;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.resultPinyin {
+  font-size: 12px;
+  color: #999;
+  font-family: monospace;
+  background: #f5f5f5;
+  padding: 5px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.noResults {
+  padding: 40px;
+  text-align: center;
+  background: #fff3e0;
+  border: 1px solid #ff9800;
+  border-radius: 8px;
+
+  p {
+    margin: 10px 0;
+    color: #e65100;
+    font-size: 16px;
+
+    &:first-child {
+      font-size: 20px;
+      font-weight: bold;
+    }
+  }
+}
