@@ -8,10 +8,13 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "generate:data": "node scripts/generateTestDataOptimized.mjs"
+    "generate:test": "node scripts/generateTestData.mjs",
+    "generate:test:1k": "node scripts/generateTestData.mjs -c 1000",
+    "generate:test:10k": "node scripts/generateTestData.mjs -c 10000",
+    "generate:test:100k": "node scripts/generateTestData.mjs -c 100000",
+    "generate:test:1m": "node scripts/generateTestData.mjs -c 1000000"
   },
   "dependencies": {
-    "pinyin-pro": "^3.27.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

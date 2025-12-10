@@ -1,8 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useProgressiveCompute } from "../../hooks/useProgressiveCompute";
+import { useProgressiveCompute } from "../../hooks/useProgressiveComputeCache/useProgressiveCompute";
 import styles from "./styles.module.scss";
-import type { TestDataItem } from "../../sourceData/sampleData";
-import { testData } from "../../sourceData/testData";
+import type { TestDataItem } from "../../test/testData";
+import { testData } from "../../test/testData";
 
 export default function SearchDemo() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,29 +18,50 @@ export default function SearchDemo() {
   const filterFn = (item: TestDataItem): TestDataItem | null => {
     const query = searchQuery.toLowerCase().trim();
 
-    // 搜索范围：name, description, keywordsMap
-    const matchName = item.name.includes(searchQuery);
-    const matchDescription = item.description.includes(searchQuery);
-    const matchKeywords = item.keywordsMap.toLowerCase().includes(query);
+    // 搜索范围：name, description
+    const matchName = item.name.toLowerCase().includes(query);
+    const matchDescription = item.description.toLowerCase().includes(query);
 
-    if (matchName || matchDescription || matchKeywords) {
+    if (matchName || matchDescription) {
       return item;
     }
 
     return null;
   };
 
-  // 使用 useProgressiveCompute 进行渐进式搜索
-  const { result, isComputing, progress, error, start, cancel, reset } =
-    useProgressiveCompute<TestDataItem, TestDataItem | null>(
-      testData,
-      filterFn,
-      {
-        batchSize,
-        debounceMs,
-        timeout: 1000,
-      }
-    );
+  // 缓存配置状态
+  const [cacheEnabled, setCacheEnabled] = useState(true);
+  const [cacheStats, setCacheStats] = useState<{
+    hits: number;
+    misses: number;
+    totalQueries: number;
+  }>({ hits: 0, misses: 0, totalQueries: 0 });
+
+  // 使用 useProgressiveCompute 进行渐进式搜索（带缓存）
+  const {
+    result,
+    isComputing,
+    progress,
+    error,
+    start,
+    cancel,
+    reset,
+    cacheStatus,
+  } = useProgressiveCompute<TestDataItem, TestDataItem | null>(
+    testData,
+    filterFn,
+    {
+      batchSize,
+      debounceMs,
+      timeout: 1000,
+      cache: cacheEnabled,
+      cacheOptions: {
+        maxAge: 10 * 60 * 1000, // 10 minutes cache
+        maxSize: 50, // Max 50 search results cached
+        maxStorageSize: 10 * 1024 * 1024, // 10MB max storage
+      },
+    }
+  );
 
   // 过滤掉 null 值，得到匹配的结果，并去重
   const matchedResults = useMemo(() => {
@@ -65,8 +86,15 @@ export default function SearchDemo() {
       const duration = Date.now() - startTimeRef.current;
       setElapsedTime(duration);
       startTimeRef.current = 0;
+
+      // 更新缓存统计
+      if (cacheStatus?.hit) {
+        setCacheStats((prev) => ({ ...prev, hits: prev.hits + 1 }));
+      } else {
+        setCacheStats((prev) => ({ ...prev, misses: prev.misses + 1 }));
+      }
     }
-  }, [isComputing]);
+  }, [isComputing, cacheStatus]);
 
   // 处理搜索
   const handleSearch = () => {
@@ -76,6 +104,10 @@ export default function SearchDemo() {
     cancel(); // 先取消之前的搜索
     setElapsedTime(0);
     startTimeRef.current = 0;
+
+    // 更新缓存统计
+    setCacheStats((prev) => ({ ...prev, totalQueries: prev.totalQueries + 1 }));
+
     setTimeout(() => {
       startTimeRef.current = Date.now(); // 在启动时记录开始时间
       start();
@@ -97,11 +129,10 @@ export default function SearchDemo() {
 
     for (let i = 0; i < testData.length; i++) {
       const item = testData[i];
-      const matchName = item.name.includes(searchQuery);
-      const matchDescription = item.description.includes(searchQuery);
-      const matchKeywords = item.keywordsMap.toLowerCase().includes(query);
+      const matchName = item.name.toLowerCase().includes(query);
+      const matchDescription = item.description.toLowerCase().includes(query);
 
-      if (matchName || matchDescription || matchKeywords) {
+      if (matchName || matchDescription) {
         results.push(item);
       }
     }
@@ -146,7 +177,7 @@ export default function SearchDemo() {
                 }
               }}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="输入关键词搜索（支持姓名、描述、拼音）"
+              placeholder="输入关键词搜索（支持姓名、描述）"
               className={styles.searchInput}
             />
             <button
@@ -194,6 +225,17 @@ export default function SearchDemo() {
                   max={1000}
                   step={16}
                 />
+              </label>
+            </div>
+
+            <div className={styles.configItem}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={cacheEnabled}
+                  onChange={(e) => setCacheEnabled(e.target.checked)}
+                />
+                启用智能缓存
               </label>
             </div>
           </div>
@@ -246,6 +288,24 @@ export default function SearchDemo() {
                 {elapsedTime > 0 ? `${elapsedTime} ms` : "-"}
               </strong>
             </div>
+            <div className={styles.statItem}>
+              <span className={styles.statLabel}>缓存状态</span>
+              <strong className={styles.statValue}>
+                {cacheEnabled
+                  ? cacheStatus?.hit
+                    ? "🎯 命中"
+                    : "❌ 未命中"
+                  : "🚫 禁用"}
+              </strong>
+            </div>
+            {cacheStatus?.lastUpdated && (
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>缓存时间</span>
+                <strong className={styles.statValue}>
+                  {cacheStatus.lastUpdated.toLocaleTimeString()}
+                </strong>
+              </div>
+            )}
           </div>
         </div>
 
@@ -308,6 +368,67 @@ export default function SearchDemo() {
           </div>
         )}
 
+        {/* 缓存性能统计 */}
+        {cacheEnabled && (
+          <div className={styles.cacheStats}>
+            <h3>🚀 缓存性能统计</h3>
+            <div className={styles.stats}>
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>总查询</span>
+                <strong className={styles.statValue}>
+                  {cacheStats.totalQueries}
+                </strong>
+              </div>
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>缓存命中</span>
+                <strong className={styles.statValue + " " + styles.highlight}>
+                  {cacheStats.hits}
+                </strong>
+              </div>
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>缓存未命中</span>
+                <strong className={styles.statValue}>
+                  {cacheStats.misses}
+                </strong>
+              </div>
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>命中率</span>
+                <strong className={styles.statValue}>
+                  {cacheStats.totalQueries > 0
+                    ? `${(
+                        (cacheStats.hits / cacheStats.totalQueries) *
+                        100
+                      ).toFixed(1)}%`
+                    : "0%"}
+                </strong>
+              </div>
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>缓存大小</span>
+                <strong className={styles.statValue}>
+                  {cacheStatus?.size || 0}
+                </strong>
+              </div>
+            </div>
+            <div className={styles.cacheActions}>
+              <button
+                onClick={() => reset(true)}
+                className={styles.clearCacheBtn}
+                disabled={isComputing}
+              >
+                🗑️ 清理缓存
+              </button>
+              <button
+                onClick={() =>
+                  setCacheStats({ hits: 0, misses: 0, totalQueries: 0 })
+                }
+                className={styles.resetStatsBtn}
+              >
+                📊 重置统计
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* 搜索提示 */}
         <div className={styles.hint}>
           <p>💡 搜索提示：</p>
@@ -357,30 +478,10 @@ export default function SearchDemo() {
               </button>
             </div>
           </div>
-          <div className={styles.hintSection}>
-            <span className={styles.hintLabel}>拼音搜索：</span>
-            <div className={styles.exampleButtons}>
-              <button
-                className={styles.exampleBtn}
-                onClick={() => setSearchQuery("yxd")}
-              >
-                yxd（优秀的）
-              </button>
-              <button
-                className={styles.exampleBtn}
-                onClick={() => setSearchQuery("xt")}
-              >
-                xt（系统）
-              </button>
-              <button
-                className={styles.exampleBtn}
-                onClick={() => setSearchQuery("kf")}
-              >
-                kf（开发）
-              </button>
-            </div>
-          </div>
-          <p className={styles.hintTip}>💡 按 Enter 键快速搜索</p>
+
+          <p className={styles.hintTip}>
+            💡 按 Enter 键快速搜索，启用缓存后重复搜索会更快！
+          </p>
         </div>
       </div>
 

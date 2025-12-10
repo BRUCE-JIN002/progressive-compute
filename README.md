@@ -1,45 +1,51 @@
-# useProgressiveCompute
+# Progressive Compute Hooks
 
-一个用于渐进式计算的 React Hook，通过时间片调度和智能任务分割，避免长时间阻塞主线程，保持 UI 流畅响应。
+一个用于处理大数据集渐进式计算的 React Hook 库，提供基础版本和带缓存的进阶版本。
 
-## 特性
+## 概述
 
-- ✅ **非阻塞计算** - 使用时间片调度，不会长时间阻塞主线程
-- ✅ **实时进度** - 提供实时进度反馈（0-100%）
-- ✅ **暂停/恢复** - 支持暂停和恢复计算
-- ✅ **取消操作** - 可随时取消正在进行的计算
-- ✅ **重置状态** - 一键重置到初始状态
-- ✅ **智能调度** - 优先使用 `requestIdleCallback`，降级到 `setTimeout`
-- ✅ **防抖更新** - 可配置的 UI 更新防抖，减少渲染次数
-- ✅ **错误处理** - 内置错误捕获和状态管理
-- ✅ **内存安全** - 自动清理异步任务，防止内存泄漏
+Progressive Compute Hooks 提供了两个版本的 Hook，用于在 React 应用中高效处理大量数据的计算任务：
 
-## 安装
+- **基础版本** (`useProgressiveCompute`): 轻量级的渐进式计算 Hook
+- **缓存版本** (`useProgressiveComputeCache`): 带有 IndexedDB 缓存功能的进阶版本
 
-```bash
-# 将 useProgressiveCompute.ts 复制到你的项目中
-cp useProgressiveCompute.ts src/hooks/
-```
+## 基础版本 - useProgressiveCompute
 
-## 基本用法
+### 特性
 
-```tsx
-import { useProgressiveCompute } from './hooks/useProgressiveCompute';
+- ⚡ **渐进式处理**: 将大数据集分批处理，避免阻塞 UI
+- 🎛️ **灵活控制**: 支持暂停、恢复、取消操作
+- 📊 **实时进度**: 提供详细的进度信息和状态
+- 🔧 **可配置**: 支持自定义批次大小、防抖时间等参数
+- 🚀 **性能优化**: 使用时间片和智能调度避免卡顿
+
+### 基本用法
+
+```typescript
+import { useProgressiveCompute } from "./hooks/useProgressiveCompute/useProgressiveCompute";
 
 function MyComponent() {
-  const data = [1, 2, 3, 4, 5, ...]; // 大量数据
+  const data = [
+    /* 大量数据 */
+  ];
 
-  // 定义转换函数
-  const transformFn = (item: number) => item * 2;
-
-  // 使用 hook
-  const { result, isComputing, progress, start } = useProgressiveCompute(
+  const {
+    result,
+    isComputing,
+    progress,
+    error,
+    start,
+    pause,
+    resume,
+    cancel,
+    reset,
+  } = useProgressiveCompute(
     data,
-    transformFn,
+    (item) => processItem(item), // 转换函数
     {
-      batchSize: 500,      // 每批处理 500 条
-      debounceMs: 16,      // UI 更新防抖 16ms
-      timeout: 1000        // requestIdleCallback 超时时间
+      batchSize: 100, // 每批处理的数据量
+      debounceMs: 16, // 防抖时间
+      timeout: 1000, // 超时时间
     }
   );
 
@@ -48,350 +54,310 @@ function MyComponent() {
       <button onClick={start} disabled={isComputing}>
         开始计算
       </button>
-      <div>进度: {progress.toFixed(1)}%</div>
+      <button onClick={pause} disabled={!isComputing}>
+        暂停
+      </button>
+      <button onClick={resume}>恢复</button>
+      <button onClick={cancel}>取消</button>
+      <button onClick={() => reset()}>重置</button>
+
+      <div>进度: {progress}%</div>
       <div>结果数量: {result.length}</div>
+      {error && <div>错误: {error.message}</div>}
     </div>
   );
 }
 ```
 
-## API
-
-### 参数
+### 配置选项
 
 ```typescript
-useProgressiveCompute<T, R>(
-  data: T[],                           // 源数据数组
-  transformFn: (item: T) => R,         // 转换函数
-  options?: ProgressiveComputeOptions  // 配置选项
-)
+interface ProgressiveComputeOptions {
+  batchSize?: number; // 批次大小，默认 500
+  debounceMs?: number; // 防抖时间，默认 16ms
+  timeout?: number; // 超时时间，默认 1000ms
+}
 ```
-
-#### Options
-
-| 参数         | 类型     | 默认值 | 说明                           |
-| ------------ | -------- | ------ | ------------------------------ |
-| `batchSize`  | `number` | `500`  | 每批处理的数据量               |
-| `debounceMs` | `number` | `16`   | UI 更新防抖延迟（毫秒）        |
-| `timeout`    | `number` | `1000` | requestIdleCallback 的超时时间 |
 
 ### 返回值
 
 ```typescript
-{
-  result: R[];              // 计算结果数组
-  isComputing: boolean;     // 是否正在计算
-  progress: number;         // 进度百分比 (0-100)
-  error: Error | null;      // 错误信息
-  start: () => void;        // 开始计算
-  pause: () => void;        // 暂停计算
-  resume: () => void;       // 恢复计算
-  cancel: () => void;       // 取消计算
-  reset: () => void;        // 重置到初始状态
+interface ProgressiveComputeResult<R> {
+  result: R[]; // 计算结果数组
+  isComputing: boolean; // 是否正在计算
+  progress: number; // 进度百分比 (0-100)
+  error: Error | null; // 错误信息
+  start: () => void; // 开始计算
+  pause: () => void; // 暂停计算
+  resume: () => void; // 恢复计算
+  cancel: () => void; // 取消计算
+  reset: () => void; // 重置状态
 }
 ```
 
-## 高级用法
+## 进阶版本 - useProgressiveComputeCache
 
-### 1. 搜索/过滤场景
+### 额外特性
 
-```tsx
-interface DataItem {
-  id: number;
-  name: string;
-  description: string;
-}
+在基础版本的所有特性基础上，缓存版本还提供：
 
-function SearchComponent() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const data: DataItem[] = [...]; // 大量数据
+- 💾 **持久化缓存**: 使用 IndexedDB 存储计算结果
+- 🔄 **智能缓存**: 基于数据和转换函数自动生成缓存键
+- ⚡ **缓存命中**: 相同计算直接返回缓存结果
+- 📈 **增量存储**: 计算过程中实时保存部分结果
+- 🛡️ **错误恢复**: 完善的错误处理和降级机制
+- 🧹 **缓存管理**: 支持缓存清理和过期管理
+- 📊 **缓存统计**: 提供详细的缓存性能统计
 
-  // 过滤函数，返回 null 表示不匹配
-  const filterFn = (item: DataItem): DataItem | null => {
-    if (item.name.includes(searchQuery) ||
-        item.description.includes(searchQuery)) {
-      return item;
-    }
-    return null;
-  };
+### 缓存版本用法
 
-  const { result, isComputing, progress, start, reset } =
-    useProgressiveCompute(data, filterFn);
+```typescript
+import { useProgressiveCompute } from "./hooks/useProgressiveComputeCache/useProgressiveCompute";
 
-  // 过滤掉 null 值
-  const matchedResults = result.filter(item => item !== null);
+function MyComponent() {
+  const data = [
+    /* 大量数据 */
+  ];
+
+  const {
+    result,
+    isComputing,
+    progress,
+    error,
+    start,
+    pause,
+    resume,
+    cancel,
+    reset,
+    cacheStatus, // 缓存状态信息
+  } = useProgressiveCompute(data, (item) => processItem(item), {
+    batchSize: 100,
+    debounceMs: 16,
+    timeout: 1000,
+    cache: true, // 启用缓存
+    cacheOptions: {
+      // 缓存配置
+      dbName: "MyAppCache",
+      storeName: "computeResults",
+      version: 1,
+      maxAge: 24 * 60 * 60 * 1000, // 24小时
+      maxSize: 100, // 最大缓存条目数
+      maxStorageSize: 50 * 1024 * 1024, // 50MB
+    },
+  });
 
   return (
     <div>
-      <input
-        value={searchQuery}
-        onChange={(e) => {
-          setSearchQuery(e.target.value);
-          if (!e.target.value) {
-            reset(); // 清空时重置
-          }
-        }}
-      />
-      <button onClick={start}>搜索</button>
-      <div>找到 {matchedResults.length} 条结果</div>
+      {/* 基础控制按钮 */}
+      <button onClick={start} disabled={isComputing}>
+        开始计算
+      </button>
+      <button onClick={() => reset(true)}>重置并清理缓存</button>
+      <button onClick={() => reset(false)}>重置但保留缓存</button>
+
+      {/* 缓存状态显示 */}
+      <div>
+        <h3>缓存状态</h3>
+        <p>缓存启用: {cacheStatus?.enabled ? "是" : "否"}</p>
+        <p>缓存命中: {cacheStatus?.hit ? "是" : "否"}</p>
+        <p>缓存大小: {cacheStatus?.size}</p>
+        {cacheStatus?.lastUpdated && (
+          <p>最后更新: {cacheStatus.lastUpdated.toLocaleString()}</p>
+        )}
+      </div>
+
       <div>进度: {progress}%</div>
+      <div>结果数量: {result.length}</div>
+      {error && <div>错误: {error.message}</div>}
     </div>
   );
 }
 ```
 
-### 2. 数据转换场景
-
-```tsx
-interface RawData {
-  id: number;
-  value: number;
-}
-
-interface ProcessedData {
-  id: number;
-  squared: number;
-  cubed: number;
-  isPrime: boolean;
-}
-
-function DataProcessor() {
-  const rawData: RawData[] = [...];
-
-  const transformFn = (item: RawData): ProcessedData => {
-    return {
-      id: item.id,
-      squared: item.value ** 2,
-      cubed: item.value ** 3,
-      isPrime: isPrimeNumber(item.value)
-    };
-  };
-
-  const { result, isComputing, progress, start, pause, resume, cancel } =
-    useProgressiveCompute(rawData, transformFn, {
-      batchSize: 1000,
-      debounceMs: 32
-    });
-
-  return (
-    <div>
-      <button onClick={start} disabled={isComputing}>开始</button>
-      <button onClick={pause} disabled={!isComputing}>暂停</button>
-      <button onClick={resume} disabled={isComputing}>恢复</button>
-      <button onClick={cancel}>取消</button>
-
-      <progress value={progress} max={100} />
-      <div>已处理: {result.length} / {rawData.length}</div>
-    </div>
-  );
-}
-```
-
-### 3. 带错误处理
-
-```tsx
-function SafeProcessor() {
-  const data = [...];
-
-  const transformFn = (item: any) => {
-    // 可能抛出错误的转换逻辑
-    if (!item.valid) {
-      throw new Error('Invalid data');
-    }
-    return processItem(item);
-  };
-
-  const { result, error, isComputing, start, reset } =
-    useProgressiveCompute(data, transformFn);
-
-  return (
-    <div>
-      <button onClick={start}>开始</button>
-
-      {error && (
-        <div style={{ color: 'red' }}>
-          错误: {error.message}
-          <button onClick={reset}>重试</button>
-        </div>
-      )}
-
-      {isComputing && <div>处理中...</div>}
-      {!isComputing && !error && <div>完成！</div>}
-    </div>
-  );
-}
-```
-
-### 4. 性能监控
-
-```tsx
-function PerformanceMonitor() {
-  const [startTime, setStartTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const data = [...];
-
-  const { result, isComputing, progress, start } =
-    useProgressiveCompute(data, transformFn);
-
-  useEffect(() => {
-    if (isComputing && startTime === 0) {
-      setStartTime(Date.now());
-    }
-
-    if (!isComputing && startTime > 0) {
-      setDuration(Date.now() - startTime);
-      setStartTime(0);
-    }
-  }, [isComputing]);
-
-  return (
-    <div>
-      <button onClick={start}>开始</button>
-      <div>进度: {progress.toFixed(1)}%</div>
-      <div>耗时: {duration}ms</div>
-      <div>速度: {(result.length / duration * 1000).toFixed(0)} 条/秒</div>
-    </div>
-  );
-}
-```
-
-## 工作原理
-
-### 时间片调度
-
-Hook 使用生成器函数将大任务分割成小批次，每批处理完成后：
-
-1. 检查是否超过 16ms（一帧的时间）
-2. 如果超过，让出主线程，等待下一帧
-3. 使用 `requestIdleCallback` 或 `setTimeout` 调度下一批
-
-```
-数据: [1, 2, 3, ..., 10000]
-      ↓
-批次1: [1...500]   → 处理 → 更新 UI → 让出线程
-批次2: [501...1000] → 处理 → 更新 UI → 让出线程
-...
-批次20: [9501...10000] → 处理 → 完成
-```
-
-### 防抖更新
-
-为了减少渲染次数，UI 更新使用防抖策略：
-
-- `debounceMs <= 16`: 使用 `requestAnimationFrame`
-- `debounceMs > 16`: 使用 `setTimeout`
-
-### 智能调度
-
-优先使用 `requestIdleCallback`，在浏览器空闲时执行：
+### 缓存配置选项
 
 ```typescript
-if (window.requestIdleCallback) {
-  requestIdleCallback(callback, { timeout: 1000 });
-} else {
-  setTimeout(callback, 0);
+interface CacheOptions {
+  dbName?: string; // IndexedDB 数据库名
+  storeName?: string; // 对象存储名
+  version?: number; // 数据库版本
+  maxAge?: number; // 缓存过期时间（毫秒）
+  maxSize?: number; // 最大缓存条目数
+  maxStorageSize?: number; // 最大存储大小（字节）
+}
+
+interface ProgressiveComputeOptions {
+  // 基础选项
+  batchSize?: number;
+  debounceMs?: number;
+  timeout?: number;
+
+  // 缓存选项
+  cache?: boolean; // 是否启用缓存
+  cacheOptions?: CacheOptions;
 }
 ```
 
-## 性能对比
-
-### 普通同步处理 vs 渐进式处理
-
-| 场景 | 数据量  | 普通处理    | 渐进式处理  | UI 流畅度 |
-| ---- | ------- | ----------- | ----------- | --------- |
-| 搜索 | 100,000 | 阻塞 500ms  | 分批 520ms  | ✅ 流畅   |
-| 转换 | 50,000  | 阻塞 300ms  | 分批 310ms  | ✅ 流畅   |
-| 过滤 | 200,000 | 阻塞 1000ms | 分批 1050ms | ✅ 流畅   |
-
-**关键优势**: 虽然总耗时略有增加（~5%），但 UI 始终保持响应，动画不卡顿。
-
-## 最佳实践
-
-### 1. 选择合适的批次大小
+### 缓存状态
 
 ```typescript
-// 简单计算：较大批次
-{
-  batchSize: 1000;
-}
-
-// 复杂计算：较小批次
-{
-  batchSize: 100;
-}
-
-// 搜索/过滤：中等批次
-{
-  batchSize: 500;
+interface CacheStatus {
+  enabled: boolean; // 缓存是否启用
+  hit: boolean; // 是否命中缓存
+  size: number; // 缓存条目数量
+  lastUpdated?: Date; // 最后更新时间
 }
 ```
 
-### 2. 防抖配置
+## 使用场景
+
+### 基础版本适用于：
+
+- 简单的数据转换和过滤
+- 不需要持久化的一次性计算
+- 轻量级应用
+- 快速原型开发
+
+### 缓存版本适用于：
+
+- 复杂的数据处理和分析
+- 需要重复计算相同数据的场景
+- 大型数据集的搜索和过滤
+- 需要离线支持的应用
+- 性能要求较高的生产环境
+
+## 性能优化建议
+
+### 基础版本优化：
+
+1. **合理设置批次大小**: 根据数据复杂度调整 `batchSize`
+2. **优化转换函数**: 避免在转换函数中进行复杂计算
+3. **使用防抖**: 适当设置 `debounceMs` 避免频繁更新
+
+### 缓存版本优化：
+
+1. **缓存策略**: 根据数据变化频率设置合适的 `maxAge`
+2. **存储管理**: 定期清理过期缓存，控制存储空间
+3. **键值设计**: 确保缓存键能准确反映数据和函数的变化
+4. **错误处理**: 利用内置的错误恢复机制处理异常情况
+
+## 错误处理
+
+两个版本都提供了完善的错误处理机制：
 
 ```typescript
-// 高频更新（如进度条）
-{
-  debounceMs: 16;
-} // 使用 RAF
+const { error } = useProgressiveCompute(data, transformFn, options);
 
-// 低频更新（如列表渲染）
-{
-  debounceMs: 100;
-} // 减少渲染次数
+if (error) {
+  console.error("计算过程中发生错误:", error.message);
+  // 处理错误逻辑
+}
 ```
 
-### 3. 清理和重置
+缓存版本还提供了额外的错误恢复功能：
+
+- 自动降级到非缓存模式
+- 损坏缓存的自动清理
+- 存储配额超限的处理
+
+## 浏览器兼容性
+
+### 基础版本：
+
+- 支持所有现代浏览器
+- 需要 ES2018+ 支持
+
+### 缓存版本：
+
+- 需要 IndexedDB 支持
+- 在不支持 IndexedDB 的环境中自动降级到基础版本
+- 推荐在现代浏览器中使用
+
+## 测试数据生成
+
+项目提供了一个便捷的测试数据生成工具，用于生成大量模拟数据来测试渐进式计算的性能。
+
+### 生成测试数据
+
+运行以下命令生成测试数据：
+
+```bash
+# 生成默认 1000 条数据
+npm run generate:test
+
+# 生成指定数量的数据 (多种格式)
+npm run generate:test -- c 10000        # 简洁格式
+npm run generate:test -- -c 10000       # 标准格式
+npm run generate:test -- --count 50000  # 完整格式
+npm run generate:test -- 25000          # 最简格式
+
+# 查看帮助信息
+npm run generate:test -- h              # 简洁格式
+npm run generate:test -- -h             # 标准格式
+```
+
+### 命令行参数
+
+| 参数       | 格式                 | 说明               | 默认值 |
+| ---------- | -------------------- | ------------------ | ------ |
+| `count`    | `c`, `-c`, `--count` | 指定生成的数据条数 | 1000   |
+| `help`     | `h`, `-h`, `--help`  | 显示帮助信息       | -      |
+| `<number>` | 直接数字             | 直接指定数量       | -      |
+
+### 快速生成不同规模的测试数据
+
+```bash
+# 基本功能测试 (推荐简洁格式)
+npm run generate:test -- c 1000
+npm run generate:test -- 1000           # 最简
+
+# 性能测试
+npm run generate:test -- c 10000
+npm run generate:test -- 10000          # 最简
+
+# 压力测试
+npm run generate:test -- c 100000
+npm run generate:test -- 100000         # 最简
+
+# 极限测试（注意内存使用）
+npm run generate:test -- c 1000000
+npm run generate:test -- 1000000        # 最简
+```
+
+### 测试数据结构
+
+生成的测试数据包含以下字段：
 
 ```typescript
-// 组件卸载时自动清理（内置）
-// 手动重置
-const handleClear = () => {
-  reset(); // 清空结果、进度、错误
-};
+interface TestDataItem {
+  id: number; // 唯一标识符
+  name: string; // 随机生成的中文姓名
+  description: string; // 随机组合的描述文本
+}
 ```
 
-### 4. 避免频繁重新创建
+### 大数据测试建议
 
-```typescript
-// ❌ 不好：每次渲染都创建新函数
-const transformFn = (item) => item * 2;
+- **1,000 条数据**: 适合基本功能测试
+- **10,000 条数据**: 适合性能测试，观察渐进式计算效果
+- **100,000 条数据**: 适合压力测试，验证缓存机制效果
+- **1,000,000 条数据**: 适合极限测试，需要注意浏览器内存限制
 
-// ✅ 好：使用 useCallback
-const transformFn = useCallback((item) => item * 2, []);
-```
+生成的测试数据会自动保存到 `src/test/testData.ts` 文件中，并可直接在 Demo 中使用。
 
-## 注意事项
+## 许可证
 
-1. **数据依赖**: `data` 和 `transformFn` 变化时，需要重新调用 `start()`
-2. **内存占用**: `result` 数组会累积所有结果，大数据量时注意内存
-3. **浏览器兼容**: `requestIdleCallback` 在某些浏览器不支持，会降级到 `setTimeout`
-4. **并发控制**: 同时只能有一个计算任务，新任务会取消旧任务
+MIT License
 
-## 常见问题
+## 贡献
 
-### Q: 为什么总耗时比同步处理略长？
+欢迎提交 Issue 和 Pull Request！
 
-A: 因为需要时间片调度和任务切换的开销，但换来的是 UI 流畅度，这是值得的权衡。
+## 更新日志
 
-### Q: 如何处理大量结果的渲染？
+### v1.0.0
 
-A: 建议配合虚拟滚动（如 `react-window`）或分页显示，避免一次性渲染大量 DOM。
-
-### Q: 可以在 Node.js 中使用吗？
-
-A: 不建议。这个 Hook 依赖浏览器 API（`requestAnimationFrame`、`requestIdleCallback`），主要用于浏览器环境。
-
-### Q: 如何测试？
-
-A: 可以 mock `requestIdleCallback` 和 `requestAnimationFrame`，或使用 `@testing-library/react` 的异步工具。
-
-## 示例项目
-
-查看完整示例：
-
-- `src/components/SearchDemo` - 搜索场景
-- `src/components/ProgressiveComputeDemo` - 数据转换场景
-
-## License
-
-MIT
+- 发布基础版本 useProgressiveCompute
+- 发布缓存版本 useProgressiveComputeCache
+- 完整的 TypeScript 支持
+- 完善的错误处理和恢复机制

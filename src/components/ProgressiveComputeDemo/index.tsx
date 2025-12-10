@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import styles from "./styles.module.scss";
-import { useProgressiveCompute } from "../../hooks/useProgressiveCompute";
+import { useProgressiveCompute } from "../../hooks/useProgressiveComputeCache/useProgressiveCompute";
 
 interface DataItem {
   id: number;
@@ -65,12 +65,33 @@ export default function ProgressiveComputeDemo() {
     };
   };
 
-  const { result, isComputing, progress, error, start, pause, resume, cancel } =
-    useProgressiveCompute<DataItem, TransformedItem>(sourceData, transformFn, {
+  const [cacheEnabled, setCacheEnabled] = useState(false);
+
+  const {
+    result,
+    isComputing,
+    progress,
+    error,
+    start,
+    pause,
+    resume,
+    cancel,
+    reset,
+    cacheStatus,
+  } = useProgressiveCompute<DataItem, TransformedItem>(
+    sourceData,
+    transformFn,
+    {
       batchSize,
       debounceMs,
       timeout: 1000,
-    });
+      cache: cacheEnabled,
+      cacheOptions: {
+        maxAge: 5 * 60 * 1000, // 5 minutes
+        maxSize: 100, // Max 100 cache entries
+      },
+    }
+  );
 
   // 监控内存使用（如果浏览器支持）
   useEffect(() => {
@@ -238,6 +259,17 @@ export default function ProgressiveComputeDemo() {
             />
           </label>
         </div>
+
+        <div className={styles.configItem}>
+          <label>
+            <input
+              type="checkbox"
+              checked={cacheEnabled}
+              onChange={(e) => setCacheEnabled(e.target.checked)}
+            />
+            启用缓存
+          </label>
+        </div>
       </div>
 
       {/* 操作按钮 */}
@@ -258,6 +290,12 @@ export default function ProgressiveComputeDemo() {
           恢复
         </button>
         <button onClick={handleCancel}>取消</button>
+        <button onClick={() => reset(false)} disabled={isComputing}>
+          重置 (保留缓存)
+        </button>
+        <button onClick={() => reset(true)} disabled={isComputing}>
+          重置 (清理缓存)
+        </button>
         <button
           onClick={exportResults}
           disabled={result.length === 0}
@@ -307,6 +345,28 @@ export default function ProgressiveComputeDemo() {
             <strong>{memoryUsage.toFixed(2)} MB</strong>
           </div>
         )}
+        <div className={styles.statusItem}>
+          <span>缓存状态:</span>
+          <strong>
+            {cacheStatus?.enabled
+              ? cacheStatus.hit
+                ? "命中 ✅"
+                : "未命中 ❌"
+              : "禁用"}
+          </strong>
+        </div>
+        {cacheStatus?.lastUpdated && (
+          <div className={styles.statusItem}>
+            <span>缓存时间:</span>
+            <strong>{cacheStatus.lastUpdated.toLocaleTimeString()}</strong>
+          </div>
+        )}
+        {cacheStatus?.enabled && (
+          <div className={styles.statusItem}>
+            <span>缓存条目:</span>
+            <strong>{cacheStatus.size || 0}</strong>
+          </div>
+        )}
       </div>
 
       {/* 进度条 */}
@@ -352,8 +412,90 @@ export default function ProgressiveComputeDemo() {
               {metrics?.memoryUsed ? metrics.memoryUsed.toFixed(2) : "0.00"} MB
             </strong>
           </div>
+          {cacheEnabled && cacheStatus?.hit && (
+            <div className={styles.metricCard + " " + styles.cacheHit}>
+              <span className={styles.metricLabel}>缓存加速</span>
+              <strong className={styles.metricValue}>🚀 瞬时完成</strong>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* 缓存性能展示 */}
+      {cacheEnabled && (
+        <div className={styles.cachePerformance}>
+          <h3>🎯 缓存性能展示</h3>
+          <div className={styles.cacheDemo}>
+            <div className={styles.cacheDemoSection}>
+              <h4>缓存优势对比</h4>
+              <div className={styles.comparisonGrid}>
+                <div className={styles.comparisonItem}>
+                  <span className={styles.comparisonLabel}>首次计算</span>
+                  <div className={styles.comparisonBar}>
+                    <div
+                      className={styles.comparisonFill}
+                      style={{ width: "100%" }}
+                    >
+                      {metrics
+                        ? `${(metrics.duration / 1000).toFixed(2)}s`
+                        : "计算中..."}
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.comparisonItem}>
+                  <span className={styles.comparisonLabel}>缓存命中</span>
+                  <div className={styles.comparisonBar}>
+                    <div
+                      className={
+                        styles.comparisonFill + " " + styles.cacheSpeed
+                      }
+                      style={{ width: "5%" }}
+                    >
+                      &lt;0.01s ⚡
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.cacheDemoSection}>
+              <h4>智能缓存特性</h4>
+              <div className={styles.featureList}>
+                <div className={styles.featureItem}>
+                  <span className={styles.featureIcon}>🔑</span>
+                  <span className={styles.featureText}>
+                    智能键生成 - 基于数据和函数特征
+                  </span>
+                </div>
+                <div className={styles.featureItem}>
+                  <span className={styles.featureIcon}>📦</span>
+                  <span className={styles.featureText}>
+                    增量存储 - 边计算边缓存
+                  </span>
+                </div>
+                <div className={styles.featureItem}>
+                  <span className={styles.featureIcon}>🧠</span>
+                  <span className={styles.featureText}>
+                    预加载 - 智能预测相关数据
+                  </span>
+                </div>
+                <div className={styles.featureItem}>
+                  <span className={styles.featureIcon}>🗜️</span>
+                  <span className={styles.featureText}>
+                    数据压缩 - 优化存储空间
+                  </span>
+                </div>
+                <div className={styles.featureItem}>
+                  <span className={styles.featureIcon}>🔄</span>
+                  <span className={styles.featureText}>
+                    自动清理 - 管理存储配额
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

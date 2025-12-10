@@ -1,23 +1,17 @@
-import { pinyin } from "pinyin-pro";
+// 工具函数库
 
-const enum Languages {
-  ZH_CN = "zh-cn",
-}
-
-/** 生成拼音搜索索引 - 优化版，只保留首字母拼音 */
-export const generateKeywordsMap = (
-  text: string,
-  lang: Languages = Languages.ZH_CN
-) => {
-  if (lang === Languages.ZH_CN) {
-    // 只保留完整文本的首字母拼音索引
-    const firstPinyin = pinyin(text, {
-      toneType: "none",
-      pattern: "first",
-      type: "array",
-    }).join("");
-
-    return firstPinyin;
-  }
-  return null;
+/** 简单的文本搜索匹配函数 */
+export const matchText = (text: string, query: string): boolean => {
+  if (!query.trim()) return true;
+  return text.toLowerCase().includes(query.toLowerCase().trim());
 };
+
+/** 高亮匹配的文本 */
+export const highlightText = (text: string, query: string): string => {
+  if (!query.trim()) return text;
+
+  const regex = new RegExp(`(${query.trim()})`, "gi");
+  return text.replace(regex, "<mark>$1</mark>");
+};
+
+// 缓存管理相关的导出已移动到 hooks/useProgressiveComputeCache/ 目录下

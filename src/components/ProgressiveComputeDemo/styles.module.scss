@@ -317,3 +317,142 @@
   height: auto;
   min-width: 600px;
 }
+
+.cacheHit {
+  background: linear-gradient(135deg, #4caf50, #8bc34a) !important;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.cachePerformance {
+  margin-bottom: 20px;
+  padding: 20px;
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+
+  h3 {
+    margin: 0 0 20px;
+    color: #495057;
+    text-align: center;
+  }
+}
+
+.cacheDemo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cacheDemoSection {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  h4 {
+    margin: 0 0 15px;
+    color: #343a40;
+    font-size: 16px;
+    text-align: center;
+  }
+}
+
+.comparisonGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.comparisonItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comparisonLabel {
+  font-size: 14px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.comparisonBar {
+  height: 30px;
+  background: #e9ecef;
+  border-radius: 15px;
+  overflow: hidden;
+  position: relative;
+}
+
+.comparisonFill {
+  height: 100%;
+  background: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  transition: width 0.5s ease;
+  border-radius: 15px;
+
+  &.cacheSpeed {
+    background: linear-gradient(90deg, #4caf50, #8bc34a);
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+  }
+  to {
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
+  }
+}
+
+.featureList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+  }
+}
+
+.featureIcon {
+  font-size: 20px;
+  width: 30px;
+  text-align: center;
+}
+
+.featureText {
+  font-size: 14px;
+  color: #495057;
+  flex: 1;
+}
